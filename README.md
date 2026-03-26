@@ -1,6 +1,8 @@
 # voxtral-tts.c
 
-Pure C inference engine for [Mistral's Voxtral-4B-TTS](https://huggingface.co/mistralai/Voxtral-4B-TTS-2603) text-to-speech model. Zero external dependencies beyond the C standard library and math. Reads weights directly from safetensors via memory-mapped I/O.
+**Experimental** pure C inference engine for [Mistral's Voxtral-4B-TTS](https://huggingface.co/mistralai/Voxtral-4B-TTS-2603) text-to-speech model. Zero external dependencies beyond the C standard library and math. Reads weights directly from safetensors via memory-mapped I/O.
+
+> **Note**: This project is an experiment to create a pure C implementation of Voxtral TTS. It is **not production-ready** and no further optimization work is planned (even if I'm considering to base it on ggml). Contributions are welcome and encouraged!
 
 Sample: [Hello world](./hello_world.wav)
 
