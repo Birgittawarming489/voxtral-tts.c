@@ -85,6 +85,27 @@ Usage: ./voxtral_tts [options] "text to speak"
 | Arabic     | ar_male                                    |
 | Hindi      | hi_female, hi_male                         |
 
+## Benchmarks
+
+Measured on AMD Ryzen 9 9950X3D (16-core), 84GB RAM, OpenBLAS 0.3.26. Pure CPU inference, no GPU.
+
+| Input | Tokens | Frames | Audio | Wall time | RTF |
+|-------|--------|--------|-------|-----------|-----|
+| "Hello world" (2 words) | 2 | 21 | 1.68s | 121s | 72x |
+| "The quick brown fox..." (9 words) | 9 | 47 | 3.76s | 215s | 57x |
+| Two sentences (17 words) | 21 | 97 | 7.76s | 447s | 58x |
+| Paragraph (40 words) | 33 | 215 | 17.20s | 1023s | 59x |
+
+- **~4.8s per audio frame** on average (each frame = 80ms of audio at 12.5 Hz)
+- **RTF ~58x** (real-time factor) for typical inputs
+- **Peak RSS: ~7.8 GB** (8GB model weights mmap'd)
+- **Binary size: 86 KB**
+- **Model load: ~15s** (safetensors header parse + mmap)
+
+Each audio frame requires a full 26-layer LLM forward pass (3.4B parameters) plus 14 acoustic transformer forward passes (7 Euler steps x 2 for classifier-free guidance). This is pure CPU inference — GPU acceleration would bring this to real-time.
+
+Run `./bench.sh` to reproduce these benchmarks on your machine.
+
 ## Project Structure
 
 ```

@@ -1,0 +1,6 @@
+*.o
+voxtral_tts
+inspect_weights
+*.wav
+*.safetensors
+voxtral-tts-model/
