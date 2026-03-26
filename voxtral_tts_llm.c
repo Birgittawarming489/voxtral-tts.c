@@ -16,6 +16,10 @@
 #include <string.h>
 #include <math.h>
 
+#ifdef USE_CUDA
+#include "voxtral_tts_cuda.h"
+#endif
+
 /* ========================================================================
  * Weight Loading
  * ======================================================================== */
@@ -170,6 +174,13 @@ void tts_llm_forward(tts_ctx_t *ctx, const float *input_embed, float *out_hidden
      * input_embed: [3072] (token embedding or audio code embedding)
      * out_hidden: [3072] (hidden state at last position, before output projection)
      */
+#ifdef USE_CUDA
+    if (tts_cuda_available()) {
+        tts_cuda_llm_forward(out_hidden, input_embed, ctx->kv_cache_len);
+        ctx->kv_cache_len++;
+        return;
+    }
+#endif
     tts_decoder_t *dec = &ctx->decoder;
     int dim = TTS_DEC_DIM;
     int q_dim = TTS_DEC_HEADS * TTS_DEC_HEAD_DIM;
@@ -269,6 +280,8 @@ void tts_llm_prefill(tts_ctx_t *ctx, const float *embeds, int seq_len) {
      * embeds: [seq_len, 3072]
      * Updates KV cache. Does not return hidden states (only need last one).
      */
+    /* GPU prefill: use CPU prefill (correctness proven), then upload KV cache to GPU
+     * for subsequent GPU-accelerated decode. */
     tts_decoder_t *dec = &ctx->decoder;
     int dim = TTS_DEC_DIM;
     int q_dim = TTS_DEC_HEADS * TTS_DEC_HEAD_DIM;
@@ -358,6 +371,18 @@ void tts_llm_prefill(tts_ctx_t *ctx, const float *embeds, int seq_len) {
 
     /* Update cache position */
     ctx->kv_cache_len += seq_len;
+
+#ifdef USE_CUDA
+    /* Upload CPU KV cache to GPU for subsequent GPU-accelerated decode */
+    if (tts_cuda_available()) {
+        int kv_dim = TTS_DEC_KV_HEADS * TTS_DEC_HEAD_DIM;
+        size_t kv_bytes = (size_t)TTS_DEC_LAYERS * ctx->kv_cache_max * kv_dim * sizeof(float);
+        tts_cuda_to_device(g_cuda.kv_cache_k_gpu, ctx->kv_cache_k, kv_bytes);
+        tts_cuda_to_device(g_cuda.kv_cache_v_gpu, ctx->kv_cache_v, kv_bytes);
+        if (tts_verbose)
+            fprintf(stderr, "  Uploaded KV cache to GPU (%d positions)\n", ctx->kv_cache_len);
+    }
+#endif
 
 cleanup:
     free(x); free(x_norm); free(q); free(k); free(v);
